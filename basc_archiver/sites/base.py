@@ -82,7 +82,7 @@ class BaseSiteArchiver(object):
             raise Exception('BaseSiteArchiver must be subclassed!')
         self.options = options
         self.base_thread_dir = os.path.join(options.base_dir,
-                                            '{}/{{board}}/{{thread}}/'.format(self.name))
+                                            '{{board}}/thread/{{thread}}/'.format())
         self.base_images_dir = os.path.join(self.base_thread_dir, 'images')
         self.base_thumbs_dir = os.path.join(self.base_thread_dir, 'thumbs')
 

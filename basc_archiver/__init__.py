@@ -21,7 +21,8 @@ class Options:
                  skip_thumbs=False, thumbs_only=False,
                  skip_js=False, skip_css=False,
                  follow_child_threads=False, follow_to_other_boards=False,
-                 run_once=False,):
+                 run_once=False,
+                 jinja2=False,):
         self.base_dir = base_dir
         self.use_ssl = use_ssl
         self.silent = silent
@@ -37,6 +38,7 @@ class Options:
         self.follow_child_threads = follow_child_threads
         self.follow_to_other_boards = follow_to_other_boards
         self.run_once = run_once
+        self.jinja2 = jinja2
 
 
 class Archiver:

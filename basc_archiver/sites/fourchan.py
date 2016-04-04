@@ -7,12 +7,17 @@ from __future__ import absolute_import
 from .base import BaseSiteArchiver
 from .. import utils
 
+from htmlmin.minify import html_minify
+
 import basc_py4chan
 
 import os
 import re
 import codecs
 import threading
+
+import jinja2
+import json
 
 THREAD_NONEXISTENT = 'Thread {site} / {board} / {thread_id} does not exist.'
 THREAD_NONEXISTENT_REASON = ("Either the thread already 404'ed, your URL is incorrect, "
@@ -340,39 +345,58 @@ class FourChanSiteArchiver(BaseSiteArchiver):
 
             # and output thread html file
             local_filename = os.path.join(thread_dir, '{}.html'.format(thread_id))
-            url = http_header + FOURCHAN_BOARDS_URL % (board_name, thread_id)
 
-            if utils.download_file(local_filename, url, clobber=True):
-                # get css files
-                if not self.options.skip_css:
-                    css_dir = os.path.join(thread_dir, _CSS_DIR_NAME)
-                    utils.mkdirs(css_dir)
+            # new jinja2 templating
+            if self.options.jinja2:
+                json_data = open(local_filename.replace(".html", ".json"))
+                data = json.load(json_data)
+                templateEnv = jinja2.Environment(loader=jinja2.PackageLoader('basc_archiver.sites'))
+                template = templateEnv.get_template('template.html')
+                outputText = template.render(posts=data)
 
-                    css_regex = re.compile(FOURCHAN_CSS_REGEX)
-                    found_css_files = css_regex.findall(codecs.open(local_filename, encoding='utf-8').read())
-                    for css_filename in found_css_files:
-                        local_css_filename = os.path.join(css_dir, css_filename)
-                        url = http_header + FOURCHAN_STATIC + '/css/' + css_filename
-                        utils.download_file(local_css_filename, url)
+                minified_html = html_minify(outputText)
 
-                # get js files
-                if not self.options.skip_js:
-                    js_dir = os.path.join(thread_dir, _JS_DIR_NAME)
-                    utils.mkdirs(js_dir)
+                f = open(local_filename, "w")
+                f.write(minified_html.encode('utf-8'))
+                f.close()
 
-                    js_regex = re.compile(FOURCHAN_JS_REGEX)
-                    found_js_files = js_regex.findall(codecs.open(local_filename, encoding='utf-8').read())
-                    for js_filename in found_js_files:
-                        local_js_filename = os.path.join(js_dir, js_filename)
-                        url = http_header + FOURCHAN_STATIC + '/js/' + js_filename
-                        utils.download_file(local_js_filename, url)
+                print('  Thread HTML Generated')
 
-                # convert links to local links
-                utils.file_replace(local_filename, '"//', '"' + http_header)
-                utils.file_replace(local_filename, FOURCHAN_IMAGES_URL_REGEX, _IMAGE_DIR_NAME + r'/\1')
-                utils.file_replace(local_filename, FOURCHAN_THUMBS_URL_REGEX, _THUMB_DIR_NAME + r'/\1')
-                utils.file_replace(local_filename, FOURCHAN_CSS_URL_REGEX, _CSS_DIR_NAME + '/')
-                utils.file_replace(local_filename, FOURCHAN_JS_URL_REGEX, _JS_DIR_NAME + '/')
+            # old html downloading
+            else:
+                url = http_header + FOURCHAN_BOARDS_URL % (board_name, thread_id)
+
+                if utils.download_file(local_filename, url, clobber=True):
+                    # get css files
+                    if not self.options.skip_css:
+                        css_dir = os.path.join(thread_dir, _CSS_DIR_NAME)
+                        utils.mkdirs(css_dir)
+
+                        css_regex = re.compile(FOURCHAN_CSS_REGEX)
+                        found_css_files = css_regex.findall(codecs.open(local_filename, encoding='utf-8').read())
+                        for css_filename in found_css_files:
+                            local_css_filename = os.path.join(css_dir, css_filename)
+                            url = http_header + FOURCHAN_STATIC + '/css/' + css_filename
+                            utils.download_file(local_css_filename, url)
+
+                    # get js files
+                    if not self.options.skip_js:
+                        js_dir = os.path.join(thread_dir, _JS_DIR_NAME)
+                        utils.mkdirs(js_dir)
+
+                        js_regex = re.compile(FOURCHAN_JS_REGEX)
+                        found_js_files = js_regex.findall(codecs.open(local_filename, encoding='utf-8').read())
+                        for js_filename in found_js_files:
+                            local_js_filename = os.path.join(js_dir, js_filename)
+                            url = http_header + FOURCHAN_STATIC + '/js/' + js_filename
+                            utils.download_file(local_js_filename, url)
+
+                    # convert links to local links
+                    utils.file_replace(local_filename, '"//', '"' + http_header)
+                    utils.file_replace(local_filename, FOURCHAN_IMAGES_URL_REGEX, _IMAGE_DIR_NAME + r'/\1')
+                    utils.file_replace(local_filename, FOURCHAN_THUMBS_URL_REGEX, _THUMB_DIR_NAME + r'/\1')
+                    utils.file_replace(local_filename, FOURCHAN_CSS_URL_REGEX, _CSS_DIR_NAME + '/')
+                    utils.file_replace(local_filename, FOURCHAN_JS_URL_REGEX, _JS_DIR_NAME + '/')
 
             # add images to dl queue
             for filename in thread['thread'].filenames():

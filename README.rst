@@ -55,6 +55,7 @@ Usage
       --follow-children              Follow threads linked in downloaded threads
       --follow-to-other-boards       Follow linked threads, even if from other boards
       --silent                       Suppresses mundane printouts, prints what's important
+      --jinja2                       Use new jinja2 templating instead of downloading HTML
       -v --verbose                   Printout more information than normal
       -h --help                      Show help
       -V --version                   Show version

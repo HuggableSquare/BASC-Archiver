@@ -37,6 +37,7 @@ Options:
   --follow-children              Follow threads linked in downloaded threads
   --follow-to-other-boards       Follow linked threads, even if from other boards
   --silent                       Suppresses mundane printouts, prints what's important
+  --jinja2                       Use new jinja2 templating instead of downloading HTML
   -v --verbose                   Printout more information than normal
   -h --help                      Show help
   -V --version                   Show version
@@ -58,7 +59,8 @@ if __name__ == '__main__':
                       skip_js=args['--nojs'],
                       skip_css=args['--nocss'],
                       follow_child_threads=args['--follow-children'],
-                      follow_to_other_boards=args['--follow-to-other-boards'],)
+                      follow_to_other_boards=args['--follow-to-other-boards'],
+                      jinja2=args['--jinja2'],)
     archiver = Archiver(options)
 
     print('Starting download')
