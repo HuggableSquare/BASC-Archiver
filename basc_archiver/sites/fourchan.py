@@ -355,9 +355,12 @@ class FourChanSiteArchiver(BaseSiteArchiver):
                 outputText = template.render(posts=data)
 
                 minified_html = html_minify(outputText)
+                # fix encoding for py2
+                if not isinstance(minified_html, str):
+                    minified_html = minified_html.encode('utf-8')
 
                 f = open(local_filename, "w")
-                f.write(minified_html.encode('utf-8'))
+                f.write(minified_html)
                 f.close()
 
                 print('  Thread HTML Generated')
